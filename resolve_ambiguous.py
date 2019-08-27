@@ -7,9 +7,11 @@ import subprocess
 import sys
 from Bio import SeqIO
 
-path_to_blast = "D:\\Programs\\blast-2.9.0+\\bin\\"
-file_name = "D:\\DATA\\samplebias\\biases\\FMDV_alignments\\SAT2\\FMDV_SAT2_exc_wref_aln_0.0_cut.fasta"
+#path_to_blast = "D:\\Programs\\blast-2.9.0+\\bin\\"
+path_to_blast = "D:\\MY_FILES\\Programs\\blast-2.6.0+\\bin\\"
 
+#file_name = "D:\\DATA\\samplebias\\biases\\FMDV_alignments\\SAT2\\FMDV_SAT2_exc_wref_aln_0.0_cut.fasta"
+file_name = "D:\\MY_FILES\\DATA\\Lukashev\\Enteroviruses\\sample_bias\\FMDV_alignments\\FMDV_SAT2_exc_wref_aln_0.0_cut.fasta"
 output_dir = os.path.split(file_name)[0]
 if sys.platform == 'win32' or sys.platform == 'cygwin':
     output_dir += "\\"
@@ -71,7 +73,7 @@ for rec in fasta_al.copy():
                 print(i)
                 # starts of ambiguous nt in current slice
                 current_starts = []
-                current_starts.append(str(starts[i]))
+                current_starts.append(str(starts[i]+1))
                 print('start')
                 print(starts[i])
                 # takes the start of sequence if amb nt is closer than window/2
@@ -102,7 +104,7 @@ for rec in fasta_al.copy():
                 if i+1 < len(starts):
                     for j in range(i+1, len(starts),1):
                         if st+int(window/5)<starts[j] and starts[j]<e-int(window/5):
-                            current_starts.append(str(starts[j]))
+                            current_starts.append(str(starts[j]+1))
                             i += 1
                             if j == len(starts) - 1:
                                 i +=1
@@ -117,21 +119,26 @@ for rec in fasta_al.copy():
                 print('slices')
                 print(slices)
                 print([str(st+1)]+current_starts+[str(e)])
-                cur_slice_rec.id = rec.id + "_" + ":".join([str(st+1)]+current_starts+[str(e)])
+                cur_slice_rec.id = rec.id + "_" + ":".join([str(st+1)]+current_starts+[str(e+1)])
 
 # filename for fasta-file with slices
 file_name_slices = os.path.splitext(file_name)[0] + "_slices.fasta"
 # writes slices to fasta_file
 SeqIO.write(list_slices, file_name_slices, "fasta")
 
+file_name_less_amb = os.path.splitext(file_name)[0] + "_less_amb.fasta"
+with open(file_name_less_amb,'w') as file_less_amb:
+    SeqIO.write(fasta_al_less_amb, file_less_amb, "fasta")
+file_less_amb.close()
+
 # commands for creating local database and blast slices against it
 if sys.platform == 'win32' or sys.platform == 'cygwin':
-    makeblast_command = '{}makeblastdb.exe -in {} -dbtype nucl -out {}local_db'.format(path_to_blast, file_name, output_dir)
+    makeblast_command = '{}makeblastdb.exe -in {} -dbtype nucl -out {}local_db'.format(path_to_blast, file_name_less_amb, output_dir)
     blastn_command = '{blast_path}blastn.exe -db {out_path}local_db -query {input} -outfmt 6 -out \
                         {out_path}blast.out -strand plus -evalue 1e-20 -word_size 7'.format(blast_path = path_to_blast, \
                         input = file_name_slices, out_path = output_dir)
 else:
-    makeblast_command = '{}makeblastdb -in {} -dbtype nucl -out {}local_db'.format(path_to_blast, file_name, output_dir)
+    makeblast_command = '{}makeblastdb -in {} -dbtype nucl -out {}local_db'.format(path_to_blast, file_name_less_amb, output_dir)
     blastn_command = '{blast_path}blastn -db {out_path}local_db -query {input} -outfmt 6 -out \
                         {out_path}blast.out -strand plus -evalue 1e-20 -word_size 7'.format(blast_path = path_to_blast, \
                         input = file_name_slices, out_path = output_dir)
@@ -156,10 +163,10 @@ current_seq_id = ''
 
 
 for row in blast_output.iterrows():
-    print(row)
+    #print(row)
     # changes flag when meets new sequence with amb nt
-    if row[1]['sseqid'] != current_seq_id:
-        current_seq_id = row[1]['sseqid']
+    if row[1]['qseqid'] != current_seq_id:
+        current_seq_id = row[1]['qseqid']
         
         # id of sequence with amb nt according to original fasta
         current_seq_id_orig = "_".join(row[1]['qseqid'].split('_')[:-1])
@@ -168,10 +175,9 @@ for row in blast_output.iterrows():
         # end positions of slice
         end = int(row[1]['qseqid'].split('_')[-1].split(':')[-1]) - 1
         # ambiguous positions within slice
-        amb_pos = row[1]['qseqid'].split('_')[-1].split(':')[1:-1]
-        amb_pos = [int(x)-1 for x in amb_pos]
-        # ambiguous nt that couldn't be resolved using current reference (for one record)
-        left_amb_pos = []
+        left_amb_pos = row[1]['qseqid'].split('_')[-1].split(':')[1:-1]
+        left_amb_pos = [int(x)-1 for x in left_amb_pos]
+
         flag = 0
         # skips the row if amb nts have been resolved
     if flag != 1:
@@ -179,19 +185,29 @@ for row in blast_output.iterrows():
                 continue
         else:
             # relative start of ambiguous character in window
-            rel_amb_pos = [x - start for x in amb_pos]
+            rel_amb_pos = [x - start for x in left_amb_pos]
             # position corresponding to ambiguous character in reference sequence
             ref_pos = [int(row[1]['sstart']) - 1 + x for x in rel_amb_pos]
             # nucleotides in reference sequence in positions that are ambiguous 
-            ref_res_nuc = [ref_res_nuc.seq[x] for x in ref_pos]
+            ref_res_nuc = [fasta_al_less_amb[row[1]['sseqid']].seq[x] for x in ref_pos]
+
+            left_amb_pos_copy = left_amb_pos.copy()
             # changes amb nt to the ones in the reference sequence
-            for i in range(len(amb_pos)):
+            for i in range(len(left_amb_pos)):
                 if ref_res_nuc[i] not in ambig_nt:
-                    fasta_al_less_amb[current_seq_id_orig].seq[amb_pos[i]] = ref_res_nuc[i]
-                    left_amb_pos.remove(amb_pos[i])
+                    print(left_amb_pos[i])
+                    print(fasta_al_less_amb[current_seq_id_orig].seq[:left_amb_pos[i]])
+                    print(fasta_al_less_amb[current_seq_id_orig].seq[left_amb_pos[i]])
+                    print(fasta_al_less_amb[current_seq_id_orig].seq[left_amb_pos[i]+1:])
+                    print(len(fasta_al_less_amb[current_seq_id_orig].seq))
+
+                    fasta_al_less_amb[current_seq_id_orig].seq = fasta_al_less_amb[current_seq_id_orig].seq[:left_amb_pos[i]]+ref_res_nuc[i]+fasta_al_less_amb[current_seq_id_orig].seq[left_amb_pos[i]+1:]
+                    
+                    left_amb_pos_copy.remove(left_amb_pos[i])
                 else:
                     continue
+            left_amb_pos = left_amb_pos_copy[:]
             if len(left_amb_pos) == 0:
                 flag = 1
 
-
+SeqIO.write(fasta_al_less_amb.values(), file_name_less_amb, "fasta")
