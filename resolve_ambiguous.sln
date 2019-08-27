@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28922.388
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "resolve_ambiguous", "resolve_ambiguous.pyproj", "{5FDCA4F2-DA8A-4FC5-BAD0-BD6E7ACD8BA9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5FDCA4F2-DA8A-4FC5-BAD0-BD6E7ACD8BA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5FDCA4F2-DA8A-4FC5-BAD0-BD6E7ACD8BA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {836A2459-7171-4A1E-B1A5-2B1DB67D3C3A}
+	EndGlobalSection
+EndGlobal
