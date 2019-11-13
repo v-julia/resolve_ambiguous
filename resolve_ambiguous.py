@@ -76,17 +76,17 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
 
                 # for each ambiguous nt creates a slice with length=window surrounding this nt
                 i=0
-                print('starts')
-                print(starts)
+                #print('starts')
+                #print(starts)
                 # list with start and end positions of slices
                 slices = []
                 while i < len(starts):
-                    print(i)
+                    #print(i)
                     # starts of ambiguous nt in current slice
                     current_starts = []
                     current_starts.append(str(starts[i]+1))
-                    print('start')
-                    print(starts[i])
+                    #print('start')
+                    #print(starts[i])
                     # takes the start of sequence if amb nt is closer than window/2
                     #  to the beginning of seq
                     if starts[i] < window/2:
@@ -127,9 +127,9 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
                     else:
                         i += 1
                         #slices.append([st,e])
-                    print('slices')
-                    print(slices)
-                    print([str(st+1)]+current_starts+[str(e+1)])
+                    #print('slices')
+                    #print(slices)
+                    #print([str(st+1)]+current_starts+[str(e+1)])
                     cur_slice_rec.id = rec.id + "_" + ":".join([str(st+1)]+current_starts+[str(e+1)])
 
     # filename for fasta-file with slices
@@ -206,6 +206,7 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
                 # changes amb nt to the ones in the reference sequence
                 for i in range(len(left_amb_pos)):
                     if ref_res_nuc[i] not in ambig_nt:
+                        '''
                         print(left_amb_pos[i])
                         print(fasta_al_less_amb[current_seq_id_orig].seq[:left_amb_pos[i]])
                         print(fasta_al_less_amb[current_seq_id_orig].seq[left_amb_pos[i]])
@@ -214,12 +215,12 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
 
                         print(fasta_al_less_amb[current_seq_id_orig].seq[left_amb_pos[i]-50:left_amb_pos[i]+50])
                         print(fasta_al_less_amb[row[1]['sseqid']].seq[ref_pos[i]-50:ref_pos[i]+50])
-
+                        '''
                         fasta_al_less_amb[current_seq_id_orig].seq = fasta_al_less_amb[current_seq_id_orig].seq[:left_amb_pos[i]]+ref_res_nuc[i]+fasta_al_less_amb[current_seq_id_orig].seq[left_amb_pos[i]+1:]
-                    
+                        '''
                         print(fasta_al_less_amb[current_seq_id_orig].seq[left_amb_pos[i]-50:left_amb_pos[i]+50])
                         print(fasta_al_less_amb[row[1]['sseqid']].seq[ref_pos[i]-50:ref_pos[i]+50])
-
+                        '''
                         left_amb_pos_copy.remove(left_amb_pos[i])
                     else:
                         continue
