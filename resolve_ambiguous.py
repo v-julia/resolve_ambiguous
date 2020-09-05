@@ -66,8 +66,14 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
         else:
             # checking whether the number of ambiguous characters exceed specified threshold
             if (amb_total/len(re.sub("-","", str(rec.seq))))>0.01:
+                print(rec.name, 'exceeded threshold')
                 continue
+            elif (re.findall(r"nnnnn", str(rec.seq))):
+                print(rec.name, 'has 5 or more n-nt in a row')
+                continue
+            
             else:
+                print(rec.name)
                 # if the number of ambiguous nucleotides doesn't exceed the threshold
                 # add copy record to a new list
                 fasta_al_less_amb.append(rec)
@@ -93,11 +99,12 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
                         st = 0
                         e = window
                     else:
-                        # takes the end of the sequence if amb nt is closer than window/2
+                            # takes the end of the sequence if amb nt is closer than window/2
                         # to the end of sequences
                         if len(rec.seq) - starts[i] < window/2:
                             st = len(rec.seq) -window
                             e = len(rec.seq)
+                            
                         # takes the slice [starts[i]-window/2, starts[i]+window/2]
                         else:
                             st = int(starts[i]-window/2)
@@ -145,9 +152,11 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
     # commands for creating local database and blast slices against it
     if sys.platform == 'win32' or sys.platform == 'cygwin':
         makeblast_command = '{}makeblastdb.exe -in {} -dbtype nucl -out {}local_db'.format(path_to_blast, file_name_less_amb, output_dir)
+        print(makeblast_command)
         blastn_command = '{blast_path}blastn.exe -db {out_path}local_db -query {input} -outfmt 6 -out \
                             {out_path}blast.out -strand plus -evalue 1e-20 -word_size 7'.format(blast_path = path_to_blast, \
                             input = file_name_slices, out_path = output_dir)
+        print(blastn_command)
     else:
         makeblast_command = '{}makeblastdb -in {} -dbtype nucl -out {}local_db'.format(path_to_blast, file_name_less_amb, output_dir)
         blastn_command = '{blast_path}blastn -db {out_path}local_db -query {input} -outfmt 6 -out \
@@ -228,7 +237,7 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
                 if len(left_amb_pos) == 0:
                     flag = 1
                 else:
-                    print('reference has amb')
+                    print(current_seq_id, 'reference has amb')
     print(file_name_less_amb)
     SeqIO.write(fasta_al_less_amb.values(), file_name_less_amb, "fasta")
 
@@ -248,10 +257,11 @@ if __name__ == "__main__":
     if not args.path_out:
         args.path_out = os.path.split(args.input_file)[0]
 
-    args.path_blast = "D:\\Programs\\blast-2.9.0+\\bin\\"
+    args.path_blast = "C:\\Programs\\NCBI\\blast-2.6.0+\\bin\\"
 
     resolve_ambiguos(args.input_file, args.path_out, args.window, args.path_blast)
 
 
+#path_to_blast = "C:\\Programs\\NCBI\\blast-2.10.0+\\bin\\"
 #path_to_blast = "D:\\Programs\\blast-2.9.0+\\bin\\"
 #path_to_blast = "D:\\MY_FILES\\Programs\\blast-2.6.0+\\bin\\"
