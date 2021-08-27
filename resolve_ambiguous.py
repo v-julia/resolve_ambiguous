@@ -165,7 +165,7 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
     subprocess.call(blastn_command, shell=True)
 
     # dataframe with blast results
-=
+
     blast_output = pd.read_csv(output_dir+'blast.out', sep='\t', header = None, \
                                 names=['qseqid','sseqid','pident','length','mismatch',\
                                 'gapopen','qstart','qend','sstart','send','evalue','bitscore'])
