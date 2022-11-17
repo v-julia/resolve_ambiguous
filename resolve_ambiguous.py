@@ -22,7 +22,8 @@ ambig_nt = ['n',  # A, T, G, C
             'total'
             ]
 
-def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
+def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
+                     evalue, word_size):
     '''
     Resolves ambiguous nucleotides in nucleotide sequences according to
     consensus in most related sequences to the region with ambiguous nt.
@@ -154,18 +155,21 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
         makeblast_command = '{}makeblastdb.exe -in {} -dbtype nucl -out {}local_db'.format(path_to_blast, file_name_less_amb, output_dir)
         print(makeblast_command)
         blastn_command = '{blast_path}blastn.exe -db {out_path}local_db -query {input} -outfmt 6 -out \
-                            {out_path}blast.out -strand plus -evalue 1e-20 -word_size 7'.format(blast_path = path_to_blast, \
-                            input = file_name_slices, out_path = output_dir)
+                            {out_path}blast.out -strand plus -evalue {evalue} -word_size {word_size}'.format(blast_path = path_to_blast, \
+                            input = file_name_slices, out_path = output_dir, \
+                            evalue = evalue, word_size = word_size)
         print(blastn_command)
     else:
         makeblast_command = '{}makeblastdb -in {} -dbtype nucl -out {}local_db'.format(path_to_blast, file_name_less_amb, output_dir)
         blastn_command = '{blast_path}blastn -db {out_path}local_db -query {input} -outfmt 6 -out \
                             {out_path}blast.out -strand plus -evalue 1e-20 -word_size 7'.format(blast_path = path_to_blast, \
-                            input = file_name_slices, out_path = output_dir)
+                            input = file_name_slices, out_path = output_dir, \
+                            evalue = evalue, word_size = word_size)
     subprocess.call(makeblast_command, shell=True)
 
     # blast against reference sequences
-    subprocess.call(blastn_command, shell=True)
+    with open(output_dir+'blast.err', 'w') as stderr_file:
+        subprocess.call(blastn_command, shell=True, stderr=stderr_file)
 
     # dataframe with blast results
     blast_output = pd.read_csv(output_dir+'blast.out', sep='\t', header = None, \
@@ -251,6 +255,10 @@ if __name__ == "__main__":
                         in 'years' folder in the directory of input file")
     parser.add_argument("-w", "--window", type=str,
                         help="window size")
+    parser.add_argument("-evalue", "--evalue", type=float, default=1e-20,
+                        help="blastn E-value")
+    parser.add_argument("-word_size", "--word_size", type=int, default=7,
+                        help="blastn word size")
     args = parser.parse_args()
 
    
@@ -259,7 +267,8 @@ if __name__ == "__main__":
 
     args.path_blast = "C:\\Programs\\NCBI\\blast-2.6.0+\\bin\\"
 
-    resolve_ambiguos(args.input_file, args.path_out, args.window, args.path_blast)
+    resolve_ambiguos(args.input_file, args.path_out, args.window, \
+                     args.path_blast, args.evalue, args.word_size)
 
 
 #path_to_blast = "C:\\Programs\\NCBI\\blast-2.10.0+\\bin\\"
