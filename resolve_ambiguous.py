@@ -236,12 +236,13 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-input", "--input_file", type=str,
-                        help="Input xml-file generated in BEAUTi", required=True)
+                        help="path to file with alignment of nt sequences in fasta-format", required=True)
     parser.add_argument("-pout", "--path_out", type=str,
-                        help="Output directory. If not defined the output files will be saved \
-                        in 'years' folder in the directory of input file")
+                        help="path to directory of output alignment without amb nucleotides")
     parser.add_argument("-w", "--window", type=str,
                         help="window size")
+    parser.add_argument("-pb", "--path_blast", type=str,
+                        help="path to blast")
     args = parser.parse_args()
 
    
