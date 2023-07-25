@@ -35,7 +35,7 @@ def search_amb(input_file):
                 amb_counts[nt].append(record.seq.lower().count(nt))
                 total_amb += record.seq.lower().count(nt)
             amb_counts['total'].append(total_amb)
-            if total_amb < 15:
+            if total_amb < 1:
                 new_records.append(record)
             else:
                 print(record.id + ' ' + str(total_amb))
@@ -45,8 +45,8 @@ def search_amb(input_file):
         if len(amb_counts[key]) != 0:
             plt.hist(amb_counts[key], list(range(max(amb_counts[key])+5)), log = True)
             plt.title('Distribution of {}'.format(key))
-            plt.xlabel('Number of sequences')
-            plt.ylabel('Number of ambiguous characters in sequence')
+            plt.xlabel('Number of ambiguous characters in sequence')
+            plt.ylabel('Number of sequences')
             plt.show()
     handle.close()
 
