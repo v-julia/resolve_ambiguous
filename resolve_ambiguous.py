@@ -68,7 +68,9 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
             fasta_al_less_amb.append(rec)
         else:
             # checking whether the number of ambiguous characters exceed specified threshold
-            if (amb_total/len(re.sub("-","", str(rec.seq))))>0.01:
+            rec_seq_len = len(re.sub("-","", str(rec.seq)))
+            print('The number of ambiguous nucleotides in {}: {} ({}%)'.format(rec.id, amb_total, round(amb_total/rec_seq_len,2)))
+            if (amb_total/rec_seq_len)>0.01:
                 print(rec.name, 'exceeded threshold')
                 continue
             elif (re.findall(r"nnnnn", str(rec.seq))):
@@ -258,22 +260,27 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-input", "--input_file", type=str,
-                        help="Input alignment in fasta-format", required=True)
+                        help="Path to file with alignment of nt sequences in fasta-format", required=True)
     parser.add_argument("-pout", "--path_out", type=str,
-                        help="Output directory")
+                        help="Path to directory for output alignment without amb nucleotides. The directory of input file by default.")
+
     parser.add_argument("-w", "--window", type=str,
                         help="window size")
     parser.add_argument("-evalue", "--evalue", type=float, default=1e-20,
                         help="blastn E-value")
     parser.add_argument("-word_size", "--word_size", type=int, default=7,
                         help="blastn word size")
+    parser.add_argument("-pb", "--path_blast", type=str,
+                        help="Path to blast", required=True)
+
     args = parser.parse_args()
 
-   
+    
+    args.input_file = os.path.realpath(args.input_file)
     if not args.path_out:
         args.path_out = os.path.split(args.input_file)[0]
-        
-    args.path_blast = "J:\\Programs\\blast-2.11.0+\\bin\\" 
+    print(args.path_blast)
+    #args.path_blast = "D:\\Programs\\blast-2.14.0+\\bin\\" 
 
     resolve_ambiguos(args.input_file, args.path_out, args.window, \
                      args.path_blast, args.evalue, args.word_size)
