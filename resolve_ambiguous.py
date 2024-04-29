@@ -22,7 +22,8 @@ ambig_nt = ['n',  # A, T, G, C
             'total'
             ]
 
-def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
+def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
+                     evalue, word_size):
     '''
     Resolves ambiguous nucleotides in nucleotide sequences according to
     consensus in most related sequences to the region with ambiguous nt.
@@ -67,9 +68,17 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
             fasta_al_less_amb.append(rec)
         else:
             # checking whether the number of ambiguous characters exceed specified threshold
-            if (amb_total/len(re.sub("-","", str(rec.seq))))>0.01:
+            rec_seq_len = len(re.sub("-","", str(rec.seq)))
+            print('The number of ambiguous nucleotides in {}: {} ({}%)'.format(rec.id, amb_total, round(amb_total/rec_seq_len,2)))
+            if (amb_total/rec_seq_len)>0.01:
+                print(rec.name, 'exceeded threshold')
                 continue
+            elif (re.findall(r"nnnnn", str(rec.seq))):
+                print(rec.name, 'has 5 or more n-nt in a row')
+                continue
+            
             else:
+                print(rec.name)
                 # if the number of ambiguous nucleotides doesn't exceed the threshold
                 # add copy record to a new list
                 fasta_al_less_amb.append(rec)
@@ -95,11 +104,12 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
                         st = 0
                         e = window
                     else:
-                        # takes the end of the sequence if amb nt is closer than window/2
+                            # takes the end of the sequence if amb nt is closer than window/2
                         # to the end of sequences
                         if len(rec.seq) - starts[i] < window/2:
                             st = len(rec.seq) - window -1
                             e = len(rec.seq)
+                            
                         # takes the slice [starts[i]-window/2, starts[i]+window/2]
                         else:
                             st = int(starts[i]-window/2)
@@ -150,7 +160,9 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
     # commands for creating local database and blast slices against it
     if sys.platform == 'win32' or sys.platform == 'cygwin':
         makeblast_command = '{}makeblastdb.exe -in {} -dbtype nucl -out {}local_db'.format(path_to_blast, file_name_less_amb, output_dir)
+        print(makeblast_command)
         blastn_command = '{blast_path}blastn.exe -db {out_path}local_db -query {input} -outfmt 6 -out \
+
                             {out_path}blast.out -strand plus -evalue 1e-20 -word_size 7 -max_target_seqs 30'.format(blast_path = path_to_blast, \
                             input = file_name_slices, out_path = output_dir)
     else:
@@ -158,11 +170,13 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
         blastn_command = '{blast_path}blastn -db {out_path}local_db -query {input} -outfmt 6 -out \
                             {out_path}blast.out -strand plus -evalue 1e-20 -word_size 7 -max_target_seqs 30'.format(blast_path = path_to_blast, \
                             input = file_name_slices, out_path = output_dir)
+
     subprocess.call(makeblast_command, shell=True)
 
     print('------Creating blast database------')
     # blast against reference sequences
-    subprocess.call(blastn_command, shell=True)
+    with open(output_dir+'blast.err', 'w') as stderr_file:
+        subprocess.call(blastn_command, shell=True, stderr=stderr_file)
 
     # dataframe with blast results
 
@@ -238,7 +252,7 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
                 if len(left_amb_pos) == 0:
                     flag = 1
                 else:
-                    print('reference has amb')
+                    print(current_seq_id, 'reference has amb')
     print(file_name_less_amb)
     SeqIO.write(fasta_al_less_amb.values(), file_name_less_amb, "fasta")
 
@@ -246,20 +260,31 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-input", "--input_file", type=str,
-                        help="Input alignment in fasta-format", required=True)
+                        help="Path to file with alignment of nt sequences in fasta-format", required=True)
     parser.add_argument("-pout", "--path_out", type=str,
-                        help="Output directory")
+                        help="Path to directory for output alignment without amb nucleotides. The directory of input file by default.")
+
     parser.add_argument("-w", "--window", type=str,
                         help="window size")
+    parser.add_argument("-evalue", "--evalue", type=float, default=1e-20,
+                        help="blastn E-value")
+    parser.add_argument("-word_size", "--word_size", type=int, default=7,
+                        help="blastn word size")
+    parser.add_argument("-pb", "--path_blast", type=str,
+                        help="Path to blast", required=True)
+
     args = parser.parse_args()
 
-    print(args.path_out)
-    if args.path_out==None:
-        args.path_out = os.path.split(args.input_file)[0]
-        
-    args.path_blast = "D:\\Programs\\blast-2.13.0+\\bin\\" 
 
-    resolve_ambiguos(args.input_file, args.path_out, args.window, args.path_blast)
+    args.input_file = os.path.realpath(args.input_file)
+    if not args.path_out:
+        args.path_out = os.path.split(args.input_file)[0]
+    print(args.path_blast)
+    #args.path_blast = "D:\\Programs\\blast-2.14.0+\\bin\\" 
+
+
+    resolve_ambiguos(args.input_file, args.path_out, args.window, \
+                     args.path_blast, args.evalue, args.word_size)
 
 #path_to_blast = "J:\\Programs\\blast-2.11.0+\\bin\\"
 #path_to_blast = "D:\\Programs\\blast-2.9.0+\\bin\\"
