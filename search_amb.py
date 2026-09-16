@@ -2,8 +2,21 @@ import argparse
 from Bio import SeqIO
 from matplotlib import pyplot as plt
 
+'''
+ Plots distribution of ambiguous nucleotides in sequences
+
+
+Input:
+input_file - file with sequences in fasta format
+
+Output:
+
+distribution olot for every type of ambiguous nucleotide
+'$input_file'_res.fasta - file with sequences that have no ambiguous nucleotides
+
+'''
 def search_amb(input_file):
-    #input_file = "HBV_all_aln_chn.fas"
+
 
     #list with ambiguous nucleotides
     ambig_nt = ['n',  # A, T, G, C 
@@ -19,22 +32,26 @@ def search_amb(input_file):
                 'v', # Not T or U (A or C or G)
                 'total'
                 ]
-
+    # counts of each type of ambiguous nucleotide
     amb_counts = {}
 
     for nt in ambig_nt:
         amb_counts[nt] = []
-
+    
+    # checks presence of ambiguous nucleotides in sequences from input_file
     new_records = []
     with open(input_file) as handle:
         records = list(SeqIO.parse(handle, "fasta"))
         print("Number of records in fasta file: {}".format(len(records)))
         for record in records.copy():
+            # total number of ambiguous nucleotides
             total_amb = 0
             for nt in amb_counts.keys():
                 amb_counts[nt].append(record.seq.lower().count(nt))
                 total_amb += record.seq.lower().count(nt)
             amb_counts['total'].append(total_amb)
+            
+            # filter sequences with ambiguous nucleotides
             if total_amb < 1:
                 new_records.append(record)
             else:
@@ -43,6 +60,7 @@ def search_amb(input_file):
     SeqIO.write(new_records, input_file.replace('.fasta', '_res.fasta').replace('.fna', '_res.fna'),format = "fasta")
     print("Sequences with no ambigous nucleotides are written to file {}".format(input_file.replace('.fasta', '_res.fasta').replace('.fna', '_res.fna')))
            
+
     for key in ambig_nt:
         if len(amb_counts[key]) != 0:
             plt.hist(amb_counts[key], list(range(max(amb_counts[key])+5)), log = True)
