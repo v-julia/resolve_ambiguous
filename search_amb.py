@@ -28,7 +28,7 @@ def search_amb(input_file):
     new_records = []
     with open(input_file) as handle:
         records = list(SeqIO.parse(handle, "fasta"))
-        print(len(records))
+        print("Number of records in fasta file: {}".format(len(records)))
         for record in records.copy():
             total_amb = 0
             for nt in amb_counts.keys():
@@ -39,7 +39,9 @@ def search_amb(input_file):
                 new_records.append(record)
             else:
                 print(record.id + ' ' + str(total_amb))
-    SeqIO.write(new_records, input_file.replace('.fasta', '_res.fasta'),format = "fasta")
+    print(f"Sequences with no ambiguous characters: {len(new_records)}")
+    SeqIO.write(new_records, input_file.replace('.fasta', '_res.fasta').replace('.fna', '_res.fna'),format = "fasta")
+    print("Sequences with no ambigous nucleotides are written to file {}".format(input_file.replace('.fasta', '_res.fasta').replace('.fna', '_res.fna')))
            
     for key in ambig_nt:
         if len(amb_counts[key]) != 0:
