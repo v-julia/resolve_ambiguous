@@ -264,7 +264,7 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
                     flag = 1
                 else:
                     print(current_seq_id, 'reference has amb')
-    print(f"{len(file_name_less_amb)} sequences are written to {file_name_less_amb}")
+    print(f"{len(fasta_al_less_amb)} sequences were written to {file_name_less_amb}")
     SeqIO.write(fasta_al_less_amb.values(), file_name_less_amb, "fasta")
 
 
