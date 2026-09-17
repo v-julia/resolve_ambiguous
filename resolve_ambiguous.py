@@ -167,6 +167,7 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
     with open(file_name_less_amb,'w') as file_less_amb:
         SeqIO.write(fasta_al_less_amb, file_less_amb, "fasta")
     file_less_amb.close()
+    
 
     # commands for creating local database and blast slices against it
     if sys.platform == 'win32' or sys.platform == 'cygwin':
@@ -263,7 +264,7 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
                     flag = 1
                 else:
                     print(current_seq_id, 'reference has amb')
-    print(file_name_less_amb)
+    print(f"{len(file_name_less_amb)} sequences are written to {file_name_less_amb}")
     SeqIO.write(fasta_al_less_amb.values(), file_name_less_amb, "fasta")
 
 
