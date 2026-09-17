@@ -1,4 +1,5 @@
 import argparse
+import os
 from Bio import SeqIO
 from matplotlib import pyplot as plt
 
@@ -15,7 +16,7 @@ distribution olot for every type of ambiguous nucleotide
 '$input_file'_res.fasta - file with sequences that have no ambiguous nucleotides
 
 '''
-def search_amb(input_file):
+def search_amb(input_file, output_dir=None):
 
 
     #list with ambiguous nucleotides
@@ -56,18 +57,26 @@ def search_amb(input_file):
                 new_records.append(record)
             else:
                 print(record.id + ' ' + str(total_amb))
+
     print(f"Sequences with no ambiguous characters: {len(new_records)}")
-    SeqIO.write(new_records, input_file.replace('.fasta', '_res.fasta').replace('.fna', '_res.fna'),format = "fasta")
-    print("Sequences with no ambigous nucleotides are written to file {}".format(input_file.replace('.fasta', '_res.fasta').replace('.fna', '_res.fna')))
+    if output_dir:
+        basename = os.path.basename(input_file)
+        temp_name, ext = os.path.splitext(basename)
+        out_name = os.path.join(output_dir, temp_name + "_noamb" + ext)
+    else:
+        _, ext = os.path.splitext(input_file)
+        out_name = input_file.replace(ext, '_noamb' + ext)
+    SeqIO.write(new_records, out_name,format = "fasta")
+    print("Sequences with no ambigous nucleotides are written to file {}".format(out_name))
            
 
-    for key in ambig_nt:
-        if len(amb_counts[key]) != 0:
-            plt.hist(amb_counts[key], list(range(max(amb_counts[key])+5)), log = True)
-            plt.title('Distribution of {}'.format(key))
-            plt.xlabel('Number of ambiguous characters in sequence')
-            plt.ylabel('Number of sequences')
-            plt.show()
+    #for key in ambig_nt:
+    #    if len(amb_counts[key]) != 0:
+    #        plt.hist(amb_counts[key], list(range(max(amb_counts[key])+5)), log = True)
+    #        plt.title('Distribution of {}'.format(key))
+    #        plt.xlabel('Number of ambiguous characters in sequence')
+    #        plt.ylabel('Number of sequences')
+    #        plt.show()
     handle.close()
 
 
@@ -76,6 +85,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-input", "--input_file", type=str,
                         help="Input file", required=True)
+    parser.add_argument("-outdir", "--output_dir", type=str,
+                        help="Output directory", required=False)
     args = parser.parse_args()
-
-    search_amb(args.input_file)
+    search_amb(args.input_file, args.output_dir)
