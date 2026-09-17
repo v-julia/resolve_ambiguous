@@ -35,11 +35,15 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
 
 
     '''
+    #the length of window around the ambiguous nucleotide to cut from original sequence
+    if not window:
+        window = 100
+    if not evalue:
+        evalue = 1e-20
+    if not word_size:
+        word_size = 7
 
-
-    #input_file = "D:\\DATA\\samplebias\\biases\\FMDV_alignments\\SAT2\\FMDV_SAT2_exc_wref_aln_0.0_cut.fasta"
-    #input_file = "D:\\MY_FILES\\DATA\\Lukashev\\Enteroviruses\\sample_bias\\FMDV_alignments\\FMDV_SAT2_exc_wref_aln_0.0_cut.fasta"
-    #output_dir = os.path.split(input_file)[0]
+\
     if sys.platform == 'win32' or sys.platform == 'cygwin':
         output_dir += "\\"
     else:
@@ -48,8 +52,7 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
     #alignment with nucleotide sequences in fasta-format
     fasta_al = list(SeqIO.parse(open(input_file), "fasta"))
 
-    #the length of window around the ambiguous nucleotide to cut from original sequence
-    window = 100
+
 
     print('------Finding sequences with ambiguous characters------')
 
@@ -62,14 +65,15 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
 
     for rec in fasta_al.copy():
         # total number of ambiguous nucleotides in sequence
-        amb_total = len(re.findall(r"[nrykmswbdhv]", str(rec.seq)))
+        amb_total = len(re.findall(r"[nrykmswbdhv]", str(rec.seq).lower()))
+        
         if amb_total == 0:
             # adds records with no ambiguous characters to the new alignment
             fasta_al_less_amb.append(rec)
         else:
             # checking whether the number of ambiguous characters exceed specified threshold
             rec_seq_len = len(re.sub("-","", str(rec.seq)))
-            print('The number of ambiguous nucleotides in {}: {} ({}%)'.format(rec.id, amb_total, round(amb_total/rec_seq_len,2)))
+            print('The number of ambiguous nucleotides in {}: {} ({}%)'.format(rec.id, amb_total, 100*round(amb_total/rec_seq_len,2)))
             if (amb_total/rec_seq_len)>0.01:
                 print(rec.name, 'exceeded threshold')
                 continue
@@ -83,7 +87,7 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
                 # add copy record to a new list
                 fasta_al_less_amb.append(rec)
                 # finds positions of ambiguous nucleotides in sequence
-                starts = [m.start() for m in re.finditer(r"[nrykmswbdhv]", str(rec.seq))]
+                starts = [m.start() for m in re.finditer(r"[nrykmswbdhv]", str(rec.seq).lower())]
 
                 # for each ambiguous nt creates a slice with length=window surrounding this nt
                 i=0
@@ -147,12 +151,19 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
                     else:
                         cur_slice_rec.id = rec.id + "_" + ":".join([str(st+1)]+current_starts+[str(e)])
     
-    # filename for fasta-file with slices
-    file_name_slices = os.path.splitext(input_file)[0] + "_slices.fasta"
+    if output_dir:
+        base, ext = os.path.splitext(os.path.basename(input_file))
+        file_name_slices = os.path.join(output_dir, base + "_slices" + ext)
+        file_name_less_amb = os.path.join(output_dir, base + "_less_amb" + ext)
+    else:
+        # filename for fasta-file with slices
+        full_path, ext = os.path.splitext(input_file)
+        file_name_slices = full_path + "_slices" + ext
+        file_name_less_amb = full_path + "_less_amb" + ext
+
     # writes slices to fasta_file
     SeqIO.write(list_slices, file_name_slices, "fasta")
 
-    file_name_less_amb = os.path.splitext(input_file)[0] + "_less_amb.fasta"
     with open(file_name_less_amb,'w') as file_less_amb:
         SeqIO.write(fasta_al_less_amb, file_less_amb, "fasta")
     file_less_amb.close()
@@ -162,14 +173,13 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
         makeblast_command = '{}makeblastdb.exe -in {} -dbtype nucl -out {}local_db'.format(path_to_blast, file_name_less_amb, output_dir)
         print(makeblast_command)
         blastn_command = '{blast_path}blastn.exe -db {out_path}local_db -query {input} -outfmt 6 -out \
-
-                            {out_path}blast.out -strand plus -evalue 1e-20 -word_size 7 -max_target_seqs 30'.format(blast_path = path_to_blast, \
-                            input = file_name_slices, out_path = output_dir)
+                            {out_path}blast.out -strand plus -evalue {e} -word_size {wsize} -max_target_seqs 30'.format(blast_path = path_to_blast, \
+                            input = file_name_slices, out_path = output_dir, e=evalue, wsize=word_size)
     else:
         makeblast_command = '{}makeblastdb -in {} -dbtype nucl -out {}local_db'.format(path_to_blast, file_name_less_amb, output_dir)
         blastn_command = '{blast_path}blastn -db {out_path}local_db -query {input} -outfmt 6 -out \
-                            {out_path}blast.out -strand plus -evalue 1e-20 -word_size 7 -max_target_seqs 30'.format(blast_path = path_to_blast, \
-                            input = file_name_slices, out_path = output_dir)
+                            {out_path}blast.out -strand plus -evalue {e} -word_size {wsize} -max_target_seqs 30'.format(blast_path = path_to_blast, \
+                            input = file_name_slices, out_path = output_dir, e=evalue, wsize=word_size)
 
     subprocess.call(makeblast_command, shell=True)
 
