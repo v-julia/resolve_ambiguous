@@ -154,7 +154,7 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
     if output_dir:
         base, ext = os.path.splitext(os.path.basename(input_file))
         file_name_slices = os.path.join(output_dir, base + "_slices" + ext)
-        file_name_less_amb = os.path.join(output_dir, base + "_less_amb" + ext)
+        file_name_less_amb = os.path.join(output_dir, base + ext)
     else:
         # filename for fasta-file with slices
         full_path, ext = os.path.splitext(input_file)
