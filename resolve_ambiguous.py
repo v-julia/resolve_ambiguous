@@ -43,7 +43,7 @@ def resolve_ambiguos(input_file, output_dir, window, path_to_blast,
     if not word_size:
         word_size = 7
 
-\
+
     if sys.platform == 'win32' or sys.platform == 'cygwin':
         output_dir += "\\"
     else:
